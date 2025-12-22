@@ -110,7 +110,11 @@ public class StudentAgentManager {
             
             // 检查是否有活跃会话
             StudentAgent agent = agents.get(persona.getId().toLowerCase());
-            student.addProperty("hasActiveSession", agent != null && agent.getHistorySize() > 0);
+            boolean hasSession = agent != null && agent.getHistorySize() > 0;
+            int historySize = agent != null ? agent.getHistorySize() : 0;
+            
+            student.addProperty("hasActiveSession", hasSession);
+            student.addProperty("historySize", historySize);
             
             array.add(student);
         }

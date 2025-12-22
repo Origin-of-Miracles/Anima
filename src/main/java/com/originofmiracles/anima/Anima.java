@@ -6,10 +6,16 @@ import com.mojang.logging.LogUtils;
 import com.originofmiracles.anima.agent.StudentAgentManager;
 import com.originofmiracles.anima.config.AnimaConfig;
 import com.originofmiracles.anima.config.PersonaManager;
+import com.originofmiracles.anima.entity.ModEntities;
+import com.originofmiracles.anima.entity.StudentEntity;
+import com.originofmiracles.anima.entity.StudentEntityRenderer;
 import com.originofmiracles.anima.integration.BridgeIntegration;
 import com.originofmiracles.anima.llm.LLMService;
 
+import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -52,10 +58,14 @@ public class Anima {
         instance = this;
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         
+        // 注册实体
+        ModEntities.register(modEventBus);
+        
         // 注册生命周期事件
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);
         modEventBus.addListener(this::loadComplete);
+        modEventBus.addListener(this::registerEntityAttributes);
         
         // 注册到 Forge 事件总线
         modEventBus.addListener((FMLCommonSetupEvent event) -> {
@@ -96,8 +106,18 @@ public class Anima {
         LOGGER.info("Anima 客户端设置");
         
         event.enqueueWork(() -> {
-            // 客户端特定初始化（如有需要）
+            // 注册实体渲染器
+            EntityRenderers.register(ModEntities.STUDENT.get(), StudentEntityRenderer::new);
+            LOGGER.info("学生实体渲染器已注册");
         });
+    }
+    
+    /**
+     * 注册实体属性
+     */
+    private void registerEntityAttributes(final EntityAttributeCreationEvent event) {
+        event.put(ModEntities.STUDENT.get(), StudentEntity.createAttributes().build());
+        LOGGER.info("学生实体属性已注册");
     }
     
     /**
@@ -127,6 +147,15 @@ public class Anima {
         }
         
         LOGGER.info("资源清理完成");
+    }
+    
+    /**
+     * 注册命令
+     */
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event) {
+        com.originofmiracles.anima.command.AnimaCommands.register(event.getDispatcher());
+        LOGGER.info("Anima 命令已注册");
     }
     
     /**

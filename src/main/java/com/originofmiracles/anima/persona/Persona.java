@@ -27,6 +27,22 @@ public class Persona {
     private String modelOverride;
     private Double temperatureOverride;
     
+    // ==================== YSM 模型配置 ====================
+    
+    /**
+     * YSM 模型 ID（可选）
+     * 格式: "namespace:model_name" 或 "model_name"
+     * 例如: "anima:arona" 或 "arona"
+     * 
+     * 模型文件位置: config/yes_steve_model/custom/<model_name>/
+     */
+    private String ysmModelId;
+    
+    /**
+     * YSM 纹理 ID（可选，如果不设置则使用模型默认纹理）
+     */
+    private String ysmTextureId;
+    
     // ==================== Getters & Setters ====================
     
     public String getId() {
@@ -123,6 +139,29 @@ public class Persona {
     
     public void setTemperatureOverride(Double temperatureOverride) {
         this.temperatureOverride = temperatureOverride;
+    }
+    
+    public String getYsmModelId() {
+        return ysmModelId;
+    }
+    
+    public void setYsmModelId(String ysmModelId) {
+        this.ysmModelId = ysmModelId;
+    }
+    
+    public String getYsmTextureId() {
+        return ysmTextureId;
+    }
+    
+    public void setYsmTextureId(String ysmTextureId) {
+        this.ysmTextureId = ysmTextureId;
+    }
+    
+    /**
+     * 检查是否配置了 YSM 模型
+     */
+    public boolean hasYsmModel() {
+        return ysmModelId != null && !ysmModelId.isEmpty();
     }
     
     /**
