@@ -1,0 +1,44 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="anima"
+version="${mod_version}"
+displayName="Anima"
+authors="Origin of Miracles 开发团队"
+description='''
+Origin of Miracles 的 AI 角色系统。
+
+基于 Miracle-Bridge 提供的基础设施，实现：
+- 智能 NPC 对话系统 (LLM 集成)
+- 角色人格配置与记忆
+- 多角色并发管理
+
+⚠️ 需要 Miracle-Bridge 作为前置！
+'''
+displayURL="https://github.com/Origin-of-Miracles/Anima"
+
+# Forge 依赖
+[[dependencies.anima]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+# Minecraft 版本
+[[dependencies.anima]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"
+
+# Miracle-Bridge 前置依赖
+[[dependencies.anima]]
+modId="miraclebridge"
+mandatory=true
+versionRange="[0.1.0-alpha,)"
+ordering="AFTER"
+side="BOTH"

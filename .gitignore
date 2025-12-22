@@ -22,3 +22,53 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# ==================== Gradle ====================
+.gradle/
+build/
+out/
+
+# Gradle wrapper (可选择保留)
+gradle/
+gradlew
+gradlew.bat
+gradle.properties
+
+# ==================== IDE ====================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+*.launch
+.metadata
+.recommenders
+
+# VS Code
+.vscode/
+
+# ==================== Forge / Minecraft ====================
+run/
+logs/
+crash-reports/
+
+# ==================== 依赖库 ====================
+# libs 目录下的 JAR 文件（不跟踪二进制依赖）
+libs/*.jar
+
+# ==================== 系统文件 ====================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==================== 临时文件 ====================
+*.tmp
+*.bak
+*.swp
+*~
