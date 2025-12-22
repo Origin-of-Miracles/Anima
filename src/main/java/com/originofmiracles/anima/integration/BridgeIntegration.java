@@ -5,7 +5,6 @@ import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import com.originofmiracles.anima.agent.StudentAgentManager;
@@ -104,6 +103,16 @@ public class BridgeIntegration {
         // 注册 anima.clearHistory - 清空对话历史
         bridgeAPI.register("anima.clearHistory", request -> {
             return handleClearHistory(agentManager, request);
+        });
+        
+        // 注册 anima.getMood - 获取学生情绪状态
+        bridgeAPI.register("anima.getMood", request -> {
+            return handleGetMood(agentManager, request);
+        });
+        
+        // 注册 anima.triggerMood - 触发情绪事件
+        bridgeAPI.register("anima.triggerMood", request -> {
+            return handleTriggerMood(agentManager, request);
         });
         
         LOGGER.info("Anima Bridge 处理器注册完成");
@@ -254,6 +263,107 @@ public class BridgeIntegration {
             agentManager.clearAllHistory();
             response.addProperty("success", true);
         }
+        
+        return response;
+    }
+    
+    /**
+     * 处理获取学生情绪状态请求
+     * 
+     * 请求格式:
+     * { "studentId": "arona" }
+     * 
+     * 响应格式:
+     * {
+     *   "success": true,
+     *   "mood": {
+     *     "state": "happy",
+     *     "displayName": "开心",
+     *     "intensity": 0.7,
+     *     "description": "明显开心",
+     *     "animationId": "emote_happy"
+     *   }
+     * }
+     */
+    private static JsonObject handleGetMood(StudentAgentManager agentManager, JsonObject request) {
+        JsonObject response = new JsonObject();
+        
+        if (!request.has("studentId")) {
+            response.addProperty("success", false);
+            response.addProperty("error", "缺少 studentId 参数");
+            return response;
+        }
+        
+        String studentId = request.get("studentId").getAsString();
+        
+        // 获取代理（不创建新的）
+        com.originofmiracles.anima.agent.StudentAgent agent = agentManager.getOrCreateAgent(studentId);
+        if (agent == null) {
+            response.addProperty("success", false);
+            response.addProperty("error", "未找到学生: " + studentId);
+            return response;
+        }
+        
+        // 构建情绪信息
+        JsonObject moodInfo = new JsonObject();
+        moodInfo.addProperty("state", agent.getCurrentMood().getId());
+        moodInfo.addProperty("displayName", agent.getCurrentMood().getDisplayName());
+        moodInfo.addProperty("intensity", agent.getMoodIntensity());
+        moodInfo.addProperty("description", agent.getMoodSystem().getMoodDescription());
+        moodInfo.addProperty("animationId", agent.getMoodAnimationId());
+        moodInfo.addProperty("isPositive", agent.getCurrentMood().isPositive());
+        moodInfo.addProperty("isNegative", agent.getCurrentMood().isNegative());
+        
+        response.addProperty("success", true);
+        response.add("mood", moodInfo);
+        
+        return response;
+    }
+    
+    /**
+     * 处理触发情绪事件请求
+     * 
+     * 请求格式:
+     * {
+     *   "studentId": "arona",
+     *   "trigger": "received_gift",
+     *   "multiplier": 1.0  // 可选
+     * }
+     */
+    private static JsonObject handleTriggerMood(StudentAgentManager agentManager, JsonObject request) {
+        JsonObject response = new JsonObject();
+        
+        if (!request.has("studentId") || !request.has("trigger")) {
+            response.addProperty("success", false);
+            response.addProperty("error", "缺少必要参数: studentId, trigger");
+            return response;
+        }
+        
+        String studentId = request.get("studentId").getAsString();
+        String triggerId = request.get("trigger").getAsString();
+        float multiplier = request.has("multiplier") ? request.get("multiplier").getAsFloat() : 1.0f;
+        
+        com.originofmiracles.anima.agent.StudentAgent agent = agentManager.getOrCreateAgent(studentId);
+        if (agent == null) {
+            response.addProperty("success", false);
+            response.addProperty("error", "未找到学生: " + studentId);
+            return response;
+        }
+        
+        com.originofmiracles.anima.mood.MoodTrigger trigger = 
+                com.originofmiracles.anima.mood.MoodTrigger.fromId(triggerId);
+        
+        if (trigger == null) {
+            response.addProperty("success", false);
+            response.addProperty("error", "未知的情绪触发器: " + triggerId);
+            return response;
+        }
+        
+        agent.getMoodSystem().applyTrigger(trigger, multiplier);
+        
+        response.addProperty("success", true);
+        response.addProperty("newState", agent.getCurrentMood().getId());
+        response.addProperty("newIntensity", agent.getMoodIntensity());
         
         return response;
     }

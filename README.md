@@ -128,14 +128,52 @@ src/main/java/com/originofmiracles/anima/
 ├── persona/
 │   └── Persona.java           # 人格数据模型
 ├── llm/
-│   └── LLMService.java        # LLM 服务层
+│   ├── LLMService.java        # LLM 服务层
+│   └── TokenBudgetManager.java # Token 预算与并发控制
+├── memory/
+│   ├── MemoryEntry.java       # 记忆条目
+│   ├── ImmediateMemory.java   # 即时记忆（对话上下文）
+│   ├── ShortTermMemory.java   # 短期记忆（持久化）
+│   └── MemoryBank.java        # 统一记忆管理
+├── mood/
+│   ├── MoodState.java         # 情绪状态枚举
+│   ├── MoodTrigger.java       # 情绪触发器
+│   ├── MoodSystem.java        # 情绪状态机
+│   └── MoodAnimationMapper.java # 情绪动画映射
 ├── agent/
-│   ├── StudentAgent.java      # 学生代理
+│   ├── StudentAgent.java      # 学生代理（含记忆+情绪）
 │   └── StudentAgentManager.java
 └── integration/
     └── BridgeIntegration.java # Bridge API 注册
 ```
 
+## 新增功能 (v0.2.0)
+
+### 记忆系统
+
+- **即时记忆**: 当前对话上下文，自动裁剪
+- **短期记忆**: 按日期存储重要事件，JSON 持久化
+- **记忆银行**: 统一管理接口，支持会话结束时保存
+
+### 情绪系统
+
+- **情绪状态**: HAPPY, SAD, ANGRY, SURPRISED 等 12 种状态
+- **情绪触发器**: 收到礼物、被称赞、被攻击等事件驱动
+- **自动衰减**: 情绪强度随时间趋向中性
+- **动画映射**: 情绪状态自动映射到 YSM 动画 ID
+
+### 新增 Bridge API
+
+| API | 说明 |
+|-----|------|
+| `anima.getMood` | 获取学生当前情绪状态 |
+| `anima.triggerMood` | 触发情绪事件 |
+
+### 内置人格
+
+- **阿罗娜 (Arona)**: 联邦学生会系统管理 AI
+- **爱丽丝 (Aris)**: 千禧年科技学院游戏开发部勇者
+
 ## 许可证
 
-MIT License
+APGL-3.0 License。详见 LICENSE 文件。
