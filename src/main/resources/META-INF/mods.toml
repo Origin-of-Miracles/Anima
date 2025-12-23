@@ -42,3 +42,11 @@ mandatory=true
 versionRange="[0.1.0-alpha,)"
 ordering="AFTER"
 side="BOTH"
+
+# GeckoLib 前置依赖（动画库）
+[[dependencies.anima]]
+modId="geckolib"
+mandatory=true
+versionRange="[4.8,5.0)"
+ordering="AFTER"
+side="BOTH"

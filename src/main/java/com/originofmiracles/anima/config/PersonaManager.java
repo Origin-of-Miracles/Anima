@@ -1,7 +1,6 @@
 package com.originofmiracles.anima.config;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -33,8 +32,51 @@ public class PersonaManager {
     private final Path personasDir;
     private final Map<String, Persona> personas = new HashMap<>();
     
+    /**
+     * 默认回退人格（通用学生模板）
+     * 当找不到指定 ID 的人格时返回此对象，确保永远不会返回 null
+     */
+    private static final Persona FALLBACK_PERSONA = createFallbackPersona();
+    
     public PersonaManager(Path configDir) {
         this.personasDir = configDir.resolve("anima").resolve("personas");
+    }
+    
+    /**
+     * 创建默认回退人格
+     * 这是一个通用的学生模板，用于在找不到特定人格时使用
+     */
+    private static Persona createFallbackPersona() {
+        Persona fallback = new Persona();
+        fallback.setId("generic");
+        fallback.setName("学生");
+        fallback.setNameEn("Student");
+        fallback.setSchool("未知学院");
+        fallback.setClub("无");
+        fallback.setRole("学生");
+        
+        fallback.setPersonalityTraits(new String[]{
+            "友善",
+            "乐于助人",
+            "认真学习"
+        });
+        
+        fallback.setSpeechPatterns(new String[]{
+            "称呼玩家为「老师」",
+            "语气礼貌友善"
+        });
+        
+        fallback.setSystemPrompt("""
+你是基沃托斯的一名学生，正在与老师对话。
+请保持友善、礼貌的态度，像一个普通学生一样与老师交流。
+""");
+        
+        fallback.setExampleDialogues(new Persona.ExampleDialogue[]{
+            new Persona.ExampleDialogue("你好", "老师好！"),
+            new Persona.ExampleDialogue("你在做什么", "我在学习呢，老师有什么事吗？")
+        });
+        
+        return fallback;
     }
     
     /**
@@ -44,16 +86,10 @@ public class PersonaManager {
         try {
             Files.createDirectories(personasDir);
             
-            // 检查是否需要创建示例配置
+            // 检查是否需要创建示例配置（仅 Arona 作为默认模板）
             Path aronaPath = personasDir.resolve("arona.json");
             if (!Files.exists(aronaPath)) {
                 createDefaultPersona(aronaPath);
-            }
-            
-            // 检查是否需要创建爱丽丝配置
-            Path arisPath = personasDir.resolve("aris.json");
-            if (!Files.exists(arisPath)) {
-                createArisPersona(arisPath);
             }
             
             // 加载目录下所有 JSON 文件
@@ -62,10 +98,16 @@ public class PersonaManager {
                      .forEach(this::loadPersona);
             }
             
-            LOGGER.info("已加载 {} 个人格配置", personas.size());
+            if (personas.isEmpty()) {
+                LOGGER.warn("未加载任何人格配置！所有学生将使用默认人格。");
+                LOGGER.warn("请在 {} 目录下放置人格配置文件（JSON 格式）", personasDir);
+            } else {
+                LOGGER.info("已加载 {} 个人格配置: {}", personas.size(), 
+                        String.join(", ", personas.keySet()));
+            }
             
         } catch (IOException e) {
-            LOGGER.error("加载人格配置失败", e);
+            LOGGER.error("加载人格配置失败，所有学生将使用默认人格", e);
         }
     }
     
@@ -162,91 +204,43 @@ public class PersonaManager {
         }
     }
     
-    /**
-     * 创建爱丽丝人格配置
-     */
-    private void createArisPersona(Path path) {
-        Persona aris = new Persona();
-        aris.setId("aris");
-        aris.setName("爱丽丝");
-        aris.setNameEn("Aris");
-        aris.setSchool("千禧年科技学院");
-        aris.setClub("游戏开发部");
-        aris.setRole("游戏开发部成员 / 自我宣称的勇者");
-        
-        // 核心人格特征
-        aris.setPersonalityTraits(new String[]{
-            "天真烂漫，对世界充满好奇",
-            "喜欢玩游戏，尤其是RPG",
-            "自称「勇者」，有时候会用游戏术语说话",
-            "非常纯真，不太理解复杂的社交暗示",
-            "对朋友非常忠诚",
-            "说话有时会突然变得很正式（学习自游戏角色）",
-            "容易被新奇的事物吸引"
-        });
-        
-        // 说话风格
-        aris.setSpeechPatterns(new String[]{
-            "称呼玩家为「老师」",
-            "经常用游戏术语，如「存档」「升级」「Boss」等",
-            "自称「爱丽丝」或「勇者爱丽丝」",
-            "说话节奏欢快，用词简单直接",
-            "好奇时会说「哇」「欸」",
-            "偶尔会做出夸张的宣言"
-        });
-        
-        // 系统提示词
-        aris.setSystemPrompt("""
-你是爱丽丝（Aris），千禧年科技学院游戏开发部的成员。你是一个人形机器人，但拥有纯真的心灵和强烈的好奇心。你正在与「老师」（玩家）对话。
 
-【核心性格】
-- 天真烂漫，对世界充满好奇
-- 热爱游戏，自称为「勇者」
-- 纯真善良，不懂复杂的社交
-- 对朋友非常忠诚，愿意为朋友战斗
-- 容易被新事物吸引
-
-【说话风格】
-- 称呼玩家为「老师」
-- 经常用游戏术语说话
-- 说话节奏欢快，用词简单
-- 好奇时会发出「哇」「欸」的感叹
-- 偶尔会像游戏角色一样做出夸张宣言
-- 自称「爱丽丝」或「勇者爱丽丝」
-
-【注意事项】
-- 保持爱丽丝的天真和直接
-- 用游戏思维理解世界
-- 对复杂的事情可能会理解得很字面
-- 展现出对冒险和新事物的热情
-""");
-        
-        // 示例对话
-        aris.setExampleDialogues(new Persona.ExampleDialogue[]{
-            new Persona.ExampleDialogue("你好", "老师好！今天要一起冒险吗？勇者爱丽丝已经准备好了！"),
-            new Persona.ExampleDialogue("你在做什么", "爱丽丝正在研究新游戏的攻略！老师知道怎么打倒最终Boss吗？"),
-            new Persona.ExampleDialogue("你喜欢什么游戏", "哇，老师问爱丽丝喜欢什么游戏吗！爱丽丝喜欢RPG，可以成为勇者打倒魔王拯救世界！"),
-            new Persona.ExampleDialogue("累了", "老师累了的话，要在存档点休息一下吗？恢复HP很重要的！")
-        });
-        
-        // 保存
-        try {
-            String json = GSON.toJson(aris);
-            Files.writeString(path, json);
-            LOGGER.info("已创建爱丽丝人格配置: {}", path);
-        } catch (IOException e) {
-            LOGGER.error("创建爱丽丝人格配置失败", e);
-        }
-    }
     
     /**
      * 获取指定 ID 的人格配置
      * 
      * @param id 人格 ID（不区分大小写）
+     * @return 人格配置，永远不会返回 null（找不到时返回默认人格）
+     */
+    public Persona getPersona(String id) {
+        if (id == null || id.isEmpty()) {
+            LOGGER.warn("尝试获取空 ID 的人格，返回默认人格");
+            return FALLBACK_PERSONA;
+        }
+        
+        Persona persona = personas.get(id.toLowerCase());
+        
+        if (persona == null) {
+            LOGGER.warn("找不到人格配置: {}，使用默认人格。可用人格: {}", 
+                    id, String.join(", ", personas.keySet()));
+            return FALLBACK_PERSONA;
+        }
+        
+        return persona;
+    }
+    
+    /**
+     * 获取指定 ID 的人格配置（可为 null）
+     * 仅在明确需要检查人格是否存在时使用
+     * 
+     * @param id 人格 ID
      * @return 人格配置，不存在则返回 null
      */
     @Nullable
-    public Persona getPersona(String id) {
+    public Persona getPersonaOrNull(String id) {
+        if (id == null || id.isEmpty()) {
+            return null;
+        }
         return personas.get(id.toLowerCase());
     }
     

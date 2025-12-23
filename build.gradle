@@ -55,11 +55,21 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     mavenCentral()
+    
+    // GeckoLib Maven Repository
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+    }
 }
 
 dependencies {
     // Forge
     minecraft 'net.minecraftforge:forge:1.20.1-47.2.0'
+    
+    // GeckoLib - 动画库（运行时必须安装）
+    compileOnly fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2')
+    runtimeOnly fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2')
     
     // Miracle-Bridge 依赖（编译时需要，运行时必须安装）
     compileOnly files('libs/miraclebridge-0.1.0-alpha.jar')

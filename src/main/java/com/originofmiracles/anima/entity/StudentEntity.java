@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 import com.originofmiracles.anima.Anima;
 import com.originofmiracles.anima.agent.StudentAgent;
+import com.originofmiracles.anima.animation.StudentAnimationController;
 import com.originofmiracles.anima.mood.MoodState;
 import com.originofmiracles.anima.mood.MoodSystem;
 import com.originofmiracles.anima.persona.Persona;
@@ -33,6 +34,10 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 /**
  * 学生实体
@@ -41,11 +46,18 @@ import net.minecraft.world.level.Level;
  * 
  * 特性：
  * - 绑定 StudentAgent 进行 AI 对话
- * - 支持 YSM 模型显示
+ * - 使用 GeckoLib 进行 3D 模型渲染和动画
  * - 具有情绪系统
  * - 可与玩家互动
  */
-public class StudentEntity extends PathfinderMob {
+public class StudentEntity extends PathfinderMob implements GeoEntity {
+    
+    // ==================== GeckoLib ====================
+    
+    /**
+     * GeckoLib 动画缓存
+     */
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     
     private static final Logger LOGGER = LogUtils.getLogger();
     
@@ -169,33 +181,22 @@ public class StudentEntity extends PathfinderMob {
     }
     
     /**
-     * 应用 YSM 模型
+     * 应用模型配置
+     * 
+     * GeckoLib 模型通过 StudentEntityModel 自动加载，
+     * 这里只保存模型 ID 供客户端渲染器使用。
      * 
      * @param persona 角色配置
      */
     private void applyYSMModel(Persona persona) {
         if (this.level().isClientSide) return;
         
-        // 检查是否配置了 YSM 模型
-        if (persona.hasYsmModel()) {
-            String modelId = persona.getYsmModelId();
-            String textureId = persona.getYsmTextureId();
-            
-            // 保存模型 ID 到同步数据（供客户端使用）
-            this.entityData.set(DATA_MODEL_ID, modelId);
-            
-            // 通过 YSM 命令 API 应用模型
-            if (com.originofmiracles.anima.compat.YSMCompat.isYSMLoaded()) {
-                if (textureId != null && !textureId.isEmpty()) {
-                    com.originofmiracles.anima.compat.YSMCompat.setEntityModelAndTexture(this, modelId, textureId);
-                } else {
-                    com.originofmiracles.anima.compat.YSMCompat.setEntityModel(this, modelId);
-                }
-                LOGGER.info("为学生 {} 应用 YSM 模型: {}", persona.getId(), modelId);
-            } else {
-                LOGGER.debug("YSM 未加载，跳过模型应用: {}", persona.getId());
-            }
-        }
+        // 保存学生 ID 作为模型标识
+        // GeckoLib 渲染器会根据此 ID 加载对应的 .geo.json 和纹理
+        String modelId = persona.getId();
+        this.entityData.set(DATA_MODEL_ID, modelId);
+        
+        LOGGER.info("为学生 {} 配置 GeckoLib 模型: {}", persona.getId(), modelId);
     }
     
     /**
@@ -406,5 +407,39 @@ public class StudentEntity extends PathfinderMob {
     @Override
     protected boolean shouldDespawnInPeaceful() {
         return false;
+    }
+    
+    /**
+     * 安全移除实体
+     * 
+     * 确保在退出游戏前正确清理资源
+     */
+    @Override
+    public void remove(RemovalReason reason) {
+        // 清理 AI Agent（如果存在）
+        if (!this.level().isClientSide && this.agent != null) {
+            String studentId = getStudentId();
+            if (!studentId.isEmpty()) {
+                LOGGER.debug("清理学生实体: {} (原因: {})", studentId, reason);
+            }
+        }
+        
+        super.remove(reason);
+    }
+    
+    // ==================== GeckoLib 实现 ====================
+    
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        // 注册主动画控制器
+        controllers.add(StudentAnimationController.createMainController(this));
+        
+        // 可选：添加头部追踪控制器
+        // controllers.add(StudentAnimationController.createHeadTrackingController(this));
+    }
+    
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return this.cache;
     }
 }

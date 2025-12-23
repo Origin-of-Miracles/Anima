@@ -4,13 +4,14 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 import com.originofmiracles.anima.agent.StudentAgentManager;
+import com.originofmiracles.anima.client.renderer.StudentEntityRenderer;
 import com.originofmiracles.anima.config.AnimaConfig;
 import com.originofmiracles.anima.config.PersonaManager;
 import com.originofmiracles.anima.entity.ModEntities;
 import com.originofmiracles.anima.entity.StudentEntity;
-import com.originofmiracles.anima.entity.StudentEntityRenderer;
 import com.originofmiracles.anima.integration.BridgeIntegration;
 import com.originofmiracles.anima.llm.LLMService;
+import com.originofmiracles.anima.util.ResourceIntegrityChecker;
 
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraftforge.common.MinecraftForge;
@@ -94,6 +95,10 @@ public class Anima {
             
             // 初始化学生代理管理器
             agentManager = new StudentAgentManager(llmService, personaManager);
+            
+            // 执行资源完整性检查
+            ResourceIntegrityChecker checker = new ResourceIntegrityChecker();
+            checker.performCheck(personaManager);
             
             LOGGER.info("Anima 核心服务已初始化");
         });

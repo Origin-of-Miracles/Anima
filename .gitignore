@@ -72,3 +72,23 @@ desktop.ini
 *.bak
 *.swp
 *~
+
+# ==================== 外部资源（分仓库管理）====================
+# 仅保留默认模板 arona，其他学生资源从外部仓库获取
+# Persona 配置文件（除 arona 外）
+src/main/resources/data/anima/personas/*
+!src/main/resources/data/anima/personas/
+!src/main/resources/data/anima/personas/arona.json
+
+# 学生模型和动画（除 arona 外）
+src/main/resources/assets/anima/geo/entity/students/*
+!src/main/resources/assets/anima/geo/entity/students/
+!src/main/resources/assets/anima/geo/entity/students/arona.geo.json
+
+src/main/resources/assets/anima/animations/entity/students/*
+!src/main/resources/assets/anima/animations/entity/students/
+!src/main/resources/assets/anima/animations/entity/students/arona.animation.json
+
+src/main/resources/assets/anima/textures/entity/students/*
+!src/main/resources/assets/anima/textures/entity/students/
+!src/main/resources/assets/anima/textures/entity/students/arona.png

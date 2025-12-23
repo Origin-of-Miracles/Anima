@@ -264,6 +264,16 @@ public class StudentSpawnManager {
     // ==================== 清理 ====================
     
     /**
+     * 强制清理所有记录
+     * 用于命令 /anima clear
+     */
+    public void clearAll() {
+        spawnedStudents.clear();
+        entityDrivers.clear();
+        LOGGER.info("已清空所有学生实体记录");
+    }
+    
+    /**
      * 清理无效引用
      * 应在服务器 tick 中定期调用
      */

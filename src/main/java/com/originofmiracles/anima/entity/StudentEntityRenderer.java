@@ -1,9 +1,11 @@
 package com.originofmiracles.anima.entity;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.originofmiracles.anima.Anima;
+import org.slf4j.Logger;
 
-import net.minecraft.client.model.HumanoidModel;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.logging.LogUtils;
+import com.originofmiracles.anima.util.ResourceValidator;
+
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -20,21 +22,23 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * 负责在客户端渲染学生实体。
  * 默认使用玩家模型，支持 YSM 模型覆盖。
  * 
+ * 包含资源回退机制，确保在纹理缺失时不会崩溃。
+ * 
  * TODO: 集成 YSM API 实现自定义模型渲染
  */
 @OnlyIn(Dist.CLIENT)
 public class StudentEntityRenderer extends MobRenderer<StudentEntity, PlayerModel<StudentEntity>> {
     
-    /**
-     * 默认材质（Steve 皮肤）
-     */
-    private static final ResourceLocation DEFAULT_TEXTURE = 
-            new ResourceLocation("textures/entity/steve.png");
+    private static final Logger LOGGER = LogUtils.getLogger();
     
     /**
-     * 自定义材质目录
+     * 默认材质（Steve 皮肤）
+     * 注意：1.20.1 的正确路径是 player/wide/steve.png
      */
-    private static final String TEXTURE_PATH = "textures/entity/student/";
+    private static final ResourceLocation DEFAULT_TEXTURE = 
+            new ResourceLocation("minecraft", "textures/entity/player/wide/steve.png");
+    
+
     
     public StudentEntityRenderer(EntityRendererProvider.Context context) {
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
@@ -42,19 +46,20 @@ public class StudentEntityRenderer extends MobRenderer<StudentEntity, PlayerMode
     
     @Override
     public ResourceLocation getTextureLocation(StudentEntity entity) {
-        String studentId = entity.getStudentId();
-        
-        // 尝试加载学生专属材质
-        if (!studentId.isEmpty()) {
-            ResourceLocation customTexture = new ResourceLocation(
-                    Anima.MOD_ID, 
-                    TEXTURE_PATH + studentId.toLowerCase() + ".png"
-            );
-            // TODO: 检查材质是否存在
-            // 目前先返回默认材质
+        if (entity == null) {
+            LOGGER.warn("实体为 null，使用默认纹理");
+            return DEFAULT_TEXTURE;
         }
         
-        return DEFAULT_TEXTURE;
+        String studentId = entity.getStudentId();
+        
+        if (studentId == null || studentId.isEmpty()) {
+            LOGGER.debug("学生 ID 为空，使用默认纹理");
+            return DEFAULT_TEXTURE;
+        }
+        
+        // 使用 ResourceValidator 的回退链
+        return ResourceValidator.getAvailableTexture(studentId);
     }
     
     @Override

@@ -72,6 +72,10 @@ public class AnimaCommands {
                 .then(Commands.literal("dismissall")
                         .executes(AnimaCommands::dismissAllStudents))
                 
+                // /anima clear - 强制清理所有学生实体（包括未注册的）
+                .then(Commands.literal("clear")
+                        .executes(AnimaCommands::clearAllStudents))
+                
                 // /anima list
                 .then(Commands.literal("list")
                         .executes(AnimaCommands::listStudents))
@@ -112,9 +116,14 @@ public class AnimaCommands {
         CommandSourceStack source = context.getSource();
         
         // 检查人格是否存在
-        Persona persona = Anima.getInstance().getPersonaManager().getPersona(studentId);
+        Persona persona = Anima.getInstance().getPersonaManager().getPersonaOrNull(studentId);
         if (persona == null) {
-            source.sendFailure(Component.literal("未找到学生: " + studentId));
+            var available = Anima.getInstance().getPersonaManager().getAllPersonas().keySet();
+            Component message = Component.literal("§c找不到学生: " + studentId + "\n")
+                    .append(Component.literal("§7可用的学生: §f" + 
+                            (available.isEmpty() ? "无（请在 config/anima/personas/ 添加配置）" 
+                                    : String.join("§7, §f", available))));
+            source.sendFailure(message);
             return 0;
         }
         
@@ -166,6 +175,50 @@ public class AnimaCommands {
             return 1;
         }
         return 0;
+    }
+    
+    /**
+     * 强制清理所有学生实体（包括世界中的所有 StudentEntity）
+     * 用于解决实体无法正确卸载的问题
+     */
+    private static int clearAllStudents(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        
+        try {
+            ServerPlayer player = source.getPlayer();
+            if (player == null) {
+                source.sendFailure(Component.literal("此命令只能由玩家执行"));
+                return 0;
+            }
+            
+            // 获取世界中的所有学生实体
+            var level = player.serverLevel();
+            var students = level.getEntitiesOfClass(
+                StudentEntity.class,
+                player.getBoundingBox().inflate(1000), // 1000 格范围
+                entity -> true
+            );
+            
+            int count = students.size();
+            
+            // 移除所有学生实体
+            for (StudentEntity student : students) {
+                student.discard(); // 使用 discard() 而非 remove()，更安全
+            }
+            
+            // 清理管理器中的记录
+            StudentSpawnManager.getInstance().clearAll();
+            
+            source.sendSuccess(() -> Component.literal(
+                "§a已强制清理 " + count + " 个学生实体"
+            ), true);
+            
+            return count;
+        } catch (Exception e) {
+            source.sendFailure(Component.literal("§c清理失败: " + e.getMessage()));
+            e.printStackTrace();
+            return 0;
+        }
     }
     
     /**
