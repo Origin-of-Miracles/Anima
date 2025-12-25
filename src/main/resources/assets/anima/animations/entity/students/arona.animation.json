@@ -1,0 +1,24 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idie": {
+			"loop": true,
+			"bones": {
+				"mouth6": {
+					"position": {
+						"vector": [0, 0, 0.5]
+					}
+				},
+				"mouth5": {
+					"position": {
+						"vector": [0, 0.05, -0.25]
+					},
+					"scale": {
+						"vector": [0.9, 0.8, 1]
+					}
+				}
+			}
+		}
+	},
+	"geckolib_format_version": 2
+}

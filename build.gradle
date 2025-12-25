@@ -8,6 +8,84 @@ plugins {
 version = '0.1.0-alpha'
 group = 'com.originofmiracles.anima'
 
+// ==================== 资源仓库自动克隆配置 ====================
+def assetsRepoUrl = 'https://github.com/Origin-of-Miracles/Anima-Assets.git'
+def assetsDir = file('Anima-Assets')
+def assetsTargetDir = file('src/main/resources/assets/anima')
+
+// Task: 克隆或更新资源仓库
+task cloneAssets {
+    description = '克隆或更新 Anima-Assets 资源仓库'
+    group = 'build setup'
+    
+    doLast {
+        if (!assetsDir.exists()) {
+            logger.lifecycle(">>> 资源仓库不存在，正在克隆: ${assetsRepoUrl}")
+            exec {
+                commandLine 'git', 'clone', assetsRepoUrl, assetsDir.absolutePath
+            }
+        } else {
+            logger.lifecycle(">>> 资源仓库已存在，跳过克隆: ${assetsDir.absolutePath}")
+        }
+    }
+}
+
+// Task: 同步资源文件到项目（符号链接/复制）
+task syncAssets(dependsOn: cloneAssets) {
+    description = '同步资源文件到项目资源目录'
+    group = 'build setup'
+    
+    doLast {
+        def modelsSource = new File(assetsDir, 'models')
+        def personasSource = new File(assetsDir, 'personas')
+        
+        if (!modelsSource.exists() || !personasSource.exists()) {
+            throw new GradleException(
+                "资源目录不完整！请检查 Anima-Assets 仓库结构。\n" +
+                "预期结构: Anima-Assets/models/ 和 Anima-Assets/personas/"
+            )
+        }
+        
+        // 创建目标目录
+        assetsTargetDir.mkdirs()
+        
+        // 使用符号链接（Windows 需要管理员权限，建议改用复制）
+        def useSymlink = System.getProperty('os.name').toLowerCase().contains('linux') || 
+                         System.getProperty('os.name').toLowerCase().contains('mac')
+        
+        if (useSymlink) {
+            // Linux/macOS: 创建符号链接
+            ['models', 'personas'].each { subdir ->
+                def linkTarget = new File(assetsTargetDir, subdir)
+                def linkSource = new File(assetsDir, subdir)
+                
+                if (!linkTarget.exists()) {
+                    java.nio.file.Files.createSymbolicLink(
+                        linkTarget.toPath(), 
+                        linkSource.toPath()
+                    )
+                    logger.lifecycle(">>> 已创建符号链接: ${linkTarget.name}")
+                }
+            }
+        } else {
+            // Windows: 复制文件（避免权限问题）
+            logger.lifecycle(">>> 正在复制资源文件到项目目录...")
+            copy {
+                from modelsSource
+                into new File(assetsTargetDir, 'models')
+            }
+            copy {
+                from personasSource
+                into new File(assetsTargetDir, 'personas')
+            }
+            logger.lifecycle(">>> 资源同步完成！")
+        }
+    }
+}
+
+// 确保编译前同步资源
+processResources.dependsOn syncAssets
+
 base {
     archivesName = 'anima'
 }
