@@ -24,7 +24,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * 
  * 包含资源回退机制，确保在纹理缺失时不会崩溃。
  * 
- * TODO: 集成 YSM API 实现自定义模型渲染
+ * TODO: 集成 YSM API 实现自定义模型渲染（已经集成了GeckoLib库，这个Todo留着以防后续需要）
  */
 @OnlyIn(Dist.CLIENT)
 public class StudentEntityRenderer extends MobRenderer<StudentEntity, PlayerModel<StudentEntity>> {
@@ -68,7 +68,6 @@ public class StudentEntityRenderer extends MobRenderer<StudentEntity, PlayerMode
         // 检查是否有 YSM 模型
         String modelId = entity.getModelId();
         if (!modelId.isEmpty()) {
-            // TODO: 使用 YSM API 渲染自定义模型
             // YSMCompat.renderModel(entity, modelId, poseStack, buffer, packedLight);
         }
         
